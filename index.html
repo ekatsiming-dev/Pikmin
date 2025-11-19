@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Train, Pill, Coffee, Store, Utensils, Scissors, ShoppingBag, 
   Croissant, Candy, MapPin, CheckCircle2, Plane, Palette, 
-  TentTree, Waves, Info, Star, CloudUpload, CloudDownload, Loader2, Settings, Link as LinkIcon, Copy, Check, HelpCircle, ChevronDown, ChevronUp
+  TentTree, Waves, Info, Star, CloudUpload, CloudDownload, Loader2, 
+  Settings, Link as LinkIcon, Copy, Check, HelpCircle, ChevronDown, ChevronUp,
+  GraduationCap, Landmark, Drama
 } from 'lucide-react';
 
 // --- 設定區 ---
@@ -61,40 +63,62 @@ const PIKMIN_COLORS = [
 
 const LOCATIONS = {
   work: {
-    title: '上班中：奇美醫院',
+    title: '奇美 / 南台商圈',
     icon: <Pill className="w-6 h-6" />,
-    desc: '交通與醫療的黃金雙點。辦公室就是最好的偵測站。',
+    desc: '交通樞紐與學生美食街的結合。大橋車站是核心。',
     color: 'bg-blue-50',
     targets: [
-      { id: 'station', name: '火車站 (Station)', subType: '改札車票 / 紙火車', icon: <Train className="w-5 h-5 text-blue-600" />, tip: '靠鐵軌側/大橋站方向。目標：印有「大橋」的紀念車票。', priority: 'SSR' },
-      { id: 'pharmacy', name: '藥局 (Pharmacy)', subType: '牙刷 / 牙膏', icon: <Pill className="w-5 h-5 text-teal-600" />, tip: '辦公室內、醫院大廳或對面中華路藥局。', priority: 'High' },
-      { id: 'cafe', name: '咖啡店 (Cafe)', subType: '咖啡杯', icon: <Coffee className="w-5 h-5 text-amber-700" />, tip: '鎖定醫院內的星巴克或路易莎。', priority: 'Mid' },
-      { id: 'convenience', name: '便利商店', subType: '瓶蓋 / 零食', icon: <Store className="w-5 h-5 text-orange-500" />, tip: '醫院內 7-11，補給用。', priority: 'Low' }
+      { id: 'station', name: '火車站 (Station)', subType: '改札車票 / 紙火車', icon: <Train className="w-5 h-5 text-blue-600" />, tip: '奇美靠鐵軌側/大橋站。目標：印有「大橋」的紀念車票。', priority: 'SSR' },
+      { id: 'pharmacy', name: '藥局 (Pharmacy)', subType: '牙刷 / 牙膏', icon: <Pill className="w-5 h-5 text-teal-600" />, tip: '辦公室內、醫院大廳或中華路藥局。', priority: 'High' },
+      { id: 'cafe', name: '咖啡店 (Cafe)', subType: '咖啡杯', icon: <Coffee className="w-5 h-5 text-amber-700" />, tip: '醫院內星巴克、南台街咖啡店。', priority: 'Mid' },
+      { id: 'restaurant', name: '餐廳 (Restaurant)', subType: '廚師帽', icon: <Utensils className="w-5 h-5 text-red-500" />, tip: '南台街學生餐廳美食密集區。', priority: 'Mid' }
     ]
   },
   home: {
-    title: '下班後：南應大商圈',
+    title: '南應大商圈',
     icon: <MapPin className="w-6 h-6" />,
-    desc: '吃喝玩樂全制霸。台南特產「甜點」的大本營。',
+    desc: '全糖生活圈。這裡甜點店密度最高，適合收集馬卡龍。',
     color: 'bg-green-50',
     targets: [
-      { id: 'sweetshop', name: '甜點店 (Sweetshop)', subType: '馬卡龍 (Macaron)', icon: <Candy className="w-5 h-5 text-pink-500" />, tip: '豆花店、嫩仙草、冰店皆可判定。數量多，適合拼全套 7 色。', priority: 'High' },
+      { id: 'sweetshop', name: '甜點店 (Sweetshop)', subType: '馬卡龍 (Macaron)', icon: <Candy className="w-5 h-5 text-pink-500" />, tip: '豆花、嫩仙草、冰店皆可判定。拼全套 7 色首選。', priority: 'High' },
       { id: 'burger', name: '漢堡店 (Burger)', subType: '漢堡裝', icon: <Utensils className="w-5 h-5 text-red-600" />, tip: '家附近稀有判定（摩斯或早餐店）。只有紅黃藍三色。', priority: 'SR' },
       { id: 'bakery', name: '麵包店 (Bakery)', subType: '法國麵包', icon: <Croissant className="w-5 h-5 text-yellow-700" />, tip: '買早餐或消夜時順便偵測。', priority: 'Mid' },
       { id: 'salon', name: '理髮廳 (Hair Salon)', subType: '剪刀 / 梳子', icon: <Scissors className="w-5 h-5 text-purple-600" />, tip: '學校周邊百元剪髮或髮廊。', priority: 'Mid' },
       { id: 'clothing', name: '服飾店 (Clothing)', subType: '髮圈', icon: <ShoppingBag className="w-5 h-5 text-indigo-600" />, tip: '南應大周邊流行服飾店。', priority: 'Low' }
     ]
   },
-  weekend: {
-    title: '週末遠征：台南特攻',
-    icon: <TentTree className="w-6 h-6" />,
-    desc: '補齊永康生活圈沒有的稀有類別。',
-    color: 'bg-amber-50',
+  chengda: {
+    title: '成大 / 後火車站',
+    icon: <GraduationCap className="w-6 h-6" />,
+    desc: '生態豐富的大學校園。水邊與森林資源是重點。',
+    color: 'bg-orange-50',
     targets: [
-      { id: 'art', name: '美術館 (Art Gallery)', subType: '畫框', icon: <Palette className="w-5 h-5 text-rose-600" />, tip: '奇美博物館本館、南美館 1/2 館。', priority: 'SSR' },
-      { id: 'airport', name: '機場 (Airport)', subType: '飛機', icon: <Plane className="w-5 h-5 text-sky-600" />, tip: '奇美博物館靠機場側停車場 / 台南都會公園。', priority: 'SSR' },
+      { id: 'waterside', name: '水邊 (Waterside)', subType: '魚餌', icon: <Waves className="w-5 h-5 text-cyan-600" />, tip: '光復校區「成功湖」畔。', priority: 'SR' },
+      { id: 'forest', name: '森林 (Forest)', subType: '鍬形蟲 / 橡實', icon: <TentTree className="w-5 h-5 text-green-700" />, tip: '榕園大草皮、成大校園內樹木密集區。', priority: 'Mid' },
+      { id: 'station_tn', name: '火車站 (Tainan)', subType: '改札車票', icon: <Train className="w-5 h-5 text-blue-600" />, tip: '光復校區門口/前鋒路側。目標：印有「台南」的車票。', priority: 'High' },
+      { id: 'book', name: '圖書館 (Library)', subType: '書本', icon: <Store className="w-5 h-5 text-amber-800" />, tip: '成功校區總圖書館周邊。', priority: 'Mid' }
+    ]
+  },
+  museum: {
+    title: '奇美博物館特區',
+    icon: <Landmark className="w-6 h-6" />,
+    desc: '台南最強複合資源點。美術館與機場雙響砲。',
+    color: 'bg-rose-50',
+    targets: [
+      { id: 'art', name: '美術館 (Art Gallery)', subType: '畫框', icon: <Palette className="w-5 h-5 text-rose-600" />, tip: '博物館本館建築物周圍。', priority: 'SSR' },
+      { id: 'airport', name: '機場 (Airport)', subType: '飛機', icon: <Plane className="w-5 h-5 text-sky-600" />, tip: '靠近文華路停車場 / 都會公園邊緣 (免進機場)。', priority: 'SSR' },
+      { id: 'park', name: '公園 (Park)', subType: '四葉草', icon: <TentTree className="w-5 h-5 text-green-500" />, tip: '都會公園廣大綠地。', priority: 'Low' }
+    ]
+  },
+  weekend: {
+    title: '假日郊區遠征',
+    icon: <TentTree className="w-6 h-6" />,
+    desc: '動物園、海邊等需要特地前往的地點。',
+    color: 'bg-indigo-50',
+    targets: [
       { id: 'zoo', name: '動物園 (Zoo)', subType: '蒲公英', icon: <TentTree className="w-5 h-5 text-green-700" />, tip: '頑皮世界野生動物園 (學甲)。', priority: 'SSR' },
-      { id: 'beach', name: '沙灘 / 水邊', subType: '貝殼 / 魚餌', icon: <Waves className="w-5 h-5 text-cyan-500" />, tip: '觀夕平台 (沙灘)、四草/成功湖 (水邊)。', priority: 'SR' }
+      { id: 'beach', name: '沙灘 (Beach)', subType: '貝殼', icon: <Waves className="w-5 h-5 text-cyan-500" />, tip: '觀夕平台、漁光島。', priority: 'SR' },
+      { id: 'movie', name: '電影院 (Movie)', subType: '爆米花', icon: <Drama className="w-5 h-5 text-purple-500" />, tip: '南紡威秀 / 國賓影城。', priority: 'Mid' }
     ]
   }
 };
