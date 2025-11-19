@@ -75,7 +75,7 @@ const LOCATIONS = {
   home: {
     title: '南應大商圈',
     icon: <MapPin className="w-5 h-5" />,
-    desc: '全糖生活圈，甜點密集。', // ★ 修正：補上結束引號
+    desc: '全糖生活圈，甜點密集。', 
     targets: [
       { 
         id: 'sweetshop', name: '甜點店', category: '餐飲', icon: <Candy className="w-5 h-5 text-pink-500" />, 
@@ -115,7 +115,6 @@ const LOCATIONS = {
         tip: '榕園、大樹區。', priority: 'Mid' 
       },
       { id: 'pizza', name: '義式餐廳', category: '餐飲', icon: <Pizza className="w-5 h-5 text-orange-500" />, subType: '披薩', tip: '義大利麵店。', priority: 'Mid' },
-      // ★ 新增：拉麵店
       { id: 'ramen', name: '拉麵店', category: '餐飲', icon: <Utensils className="w-5 h-5 text-gray-800" />, subType: '拉麵碗', tip: '日式拉麵專賣店。', priority: 'Mid' },
       { id: 'curry', name: '咖哩店', category: '餐飲', icon: <Utensils className="w-5 h-5 text-yellow-800" />, subType: '咖哩', tip: '咖哩專賣。', priority: 'Low' },
       { id: 'book', name: '圖書館', category: '文教', icon: <Store className="w-5 h-5 text-amber-800" />, subType: '書本', tip: '圖書館。', priority: 'Mid' }
@@ -185,7 +184,7 @@ const LOCATIONS = {
   }
 };
 
-// ★ 擴充後的台南攻略資料庫
+// 擴充後的台南攻略資料庫 (未變動)
 const TAINAN_GUIDE_DATA = [
   { 
     category: '文化與觀光', color: 'text-red-600', 
@@ -210,7 +209,6 @@ const TAINAN_GUIDE_DATA = [
       { type: '甜點店', places: '國華街、安平老街、冰果室', desc: '冰店、豆花、布丁都算。有馬卡龍/甜甜圈。' }, 
       { type: '漢堡', places: '丹丹漢堡、麥當勞', desc: '必試丹丹漢堡！南部特有樂趣。' },
       { type: '咖啡廳', places: '中西區巷弄、成大周邊', desc: '密度極高，隨緣即可遇到。' },
-      // ★ 新增：拉麵店
       { type: '拉麵店', places: '成大商圈、中西區', desc: '多為日式拉麵專賣店，飾品圖示與一般餐廳不同。' }
     ] 
   },
@@ -309,6 +307,7 @@ export default function App() {
   const [guideSearch, setGuideSearch] = useState('');
 
   useEffect(() => {
+    // 首次載入時檢查 localStorage 中是否有已儲存的用戶 ID
     const savedUser = localStorage.getItem('pikmin_user_id');
     if (savedUser) {
       setUserId(savedUser);
@@ -320,6 +319,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // 每次 collection 變動時，儲存到 local storage (設備端暫存)
     if (isLoggedIn && userId) {
       localStorage.setItem(`pikmin_collection_${userId}`, JSON.stringify(collection));
     }
@@ -368,7 +368,7 @@ export default function App() {
     }
   };
 
-  // ★ 核心修改：三態切換邏輯 (Tri-State Logic)
+  // 核心修改：三態切換邏輯 (Tri-State Logic)
   // 狀態: undefined (未收集) -> true (已收集) -> 'nil' (無此顏色) -> undefined
   const toggleDecor = (targetId, colorId, variantId = null) => {
     const key = variantId ? `${targetId}-${variantId}-${colorId}` : `${targetId}-${colorId}`;
@@ -400,7 +400,7 @@ export default function App() {
       variants.forEach(v => {
         const colorsToCheck = v.validColors || PIKMIN_COLORS.map(c => c.id);
         colorsToCheck.forEach(colorId => {
-            // ★ 修改：true 算收集，'nil' 也算收集 (視為完成)
+            // 修改：true 算收集，'nil' 也算收集 (視為完成)
             const val = collection[`${targetId}-${v.id}-${colorId}`];
             if (val === true || val === 'nil') count++;
         });
@@ -529,7 +529,7 @@ export default function App() {
         const key = variantId ? `${targetId}-${variantId}-${color.id}` : `${targetId}-${color.id}`;
         const status = collection[key]; // undefined | true | 'nil'
         
-        // ★ UI 渲染邏輯：根據三種狀態改變樣式
+        // UI 渲染邏輯：根據三種狀態改變樣式
         let btnClass = `w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300 `;
         let icon = null;
 
@@ -665,7 +665,13 @@ export default function App() {
     );
   };
 
-  if (!isLoggedIn) return <LoginScreen onLogin={(id) => { setUserId(id); setIsLoggedIn(true); syncCloud(id); }} />;
+  // !!! 關鍵修改：在 onLogin 中加入 localStorage.setItem 以實現登入狀態記憶 !!!
+  if (!isLoggedIn) return <LoginScreen onLogin={(id) => { 
+      localStorage.setItem('pikmin_user_id', id); // <-- 儲存 ID 以供下次自動登入
+      setUserId(id); 
+      setIsLoggedIn(true); 
+      syncCloud(id); 
+  }} />;
 
   return (
     <div className="min-h-screen font-sans max-w-md mx-auto shadow-2xl overflow-hidden flex flex-col relative" style={{ backgroundColor: THEME.base, color: THEME.text }}>
@@ -912,7 +918,7 @@ export default function App() {
                             total = t.validColors ? t.validColors.length : PIKMIN_COLORS.length;
                             const colorsToCheck = t.validColors || PIKMIN_COLORS.map(c => c.id);
                             colorsToCheck.forEach(cid => { if (collection[`${t.id}-${cid}`] === true || collection[`${t.id}-${cid}`] === 'nil') current++; });
-                        }
+                            }
 
                        if (showMissingOnly && current >= total && total > 0) return false;
                        if (categorySearch) {
