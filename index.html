@@ -4,7 +4,7 @@ import {
   Croissant, Candy, MapPin, CheckCircle2, Plane, Palette, 
   TentTree, Waves, Info, Star, CloudUpload, CloudDownload, Loader2, 
   Settings, Link as LinkIcon, Copy, Check, HelpCircle, ChevronDown, ChevronUp,
-  GraduationCap, Landmark, Drama
+  GraduationCap, Landmark, Drama, Hotel, Clapperboard, Fish
 } from 'lucide-react';
 
 // --- 設定區 ---
@@ -90,10 +90,10 @@ const LOCATIONS = {
   chengda: {
     title: '成大 / 後火車站',
     icon: <GraduationCap className="w-6 h-6" />,
-    desc: '生態豐富的大學校園。水邊與森林資源是重點。',
+    desc: '生態豐富的大學校園。適合步行補給水邊與森林資源。',
     color: 'bg-orange-50',
     targets: [
-      { id: 'waterside', name: '水邊 (Waterside)', subType: '魚餌', icon: <Waves className="w-5 h-5 text-cyan-600" />, tip: '光復校區「成功湖」畔。', priority: 'SR' },
+      { id: 'waterside', name: '水邊 (Waterside)', subType: '魚餌', icon: <Fish className="w-5 h-5 text-cyan-600" />, tip: '光復校區「成功湖」畔。若奇美沒抓到可來這補。', priority: 'SR' },
       { id: 'forest', name: '森林 (Forest)', subType: '鍬形蟲 / 橡實', icon: <TentTree className="w-5 h-5 text-green-700" />, tip: '榕園大草皮、成大校園內樹木密集區。', priority: 'Mid' },
       { id: 'station_tn', name: '火車站 (Tainan)', subType: '改札車票', icon: <Train className="w-5 h-5 text-blue-600" />, tip: '光復校區門口/前鋒路側。目標：印有「台南」的車票。', priority: 'High' },
       { id: 'book', name: '圖書館 (Library)', subType: '書本', icon: <Store className="w-5 h-5 text-amber-800" />, tip: '成功校區總圖書館周邊。', priority: 'Mid' }
@@ -102,23 +102,35 @@ const LOCATIONS = {
   museum: {
     title: '奇美博物館特區',
     icon: <Landmark className="w-6 h-6" />,
-    desc: '台南最強複合資源點。美術館與機場雙響砲。',
+    desc: '一箭三鵰的最強熱點：美術館、機場、水邊同時滿足。',
     color: 'bg-rose-50',
     targets: [
       { id: 'art', name: '美術館 (Art Gallery)', subType: '畫框', icon: <Palette className="w-5 h-5 text-rose-600" />, tip: '博物館本館建築物周圍。', priority: 'SSR' },
       { id: 'airport', name: '機場 (Airport)', subType: '飛機', icon: <Plane className="w-5 h-5 text-sky-600" />, tip: '靠近文華路停車場 / 都會公園邊緣 (免進機場)。', priority: 'SSR' },
+      { id: 'waterside', name: '水邊 (Waterside)', subType: '魚餌', icon: <Fish className="w-5 h-5 text-cyan-600" />, tip: '博物館周圍的「繆思湖」與護城河。', priority: 'SR' },
       { id: 'park', name: '公園 (Park)', subType: '四葉草', icon: <TentTree className="w-5 h-5 text-green-500" />, tip: '都會公園廣大綠地。', priority: 'Low' }
+    ]
+  },
+  west_central: {
+    title: '中西區：新天地/藍晒圖',
+    icon: <ShoppingBag className="w-6 h-6" />,
+    desc: '百貨時尚與文創園區。收集永康較少的電影院與飯店。',
+    color: 'bg-purple-50',
+    targets: [
+      { id: 'movie', name: '電影院 (Movie)', subType: '爆米花', icon: <Clapperboard className="w-5 h-5 text-purple-600" />, tip: '新光三越新天地 (新光影城)。', priority: 'SR' },
+      { id: 'hotel', name: '飯店 (Hotel)', subType: '各種備品', icon: <Hotel className="w-5 h-5 text-indigo-500" />, tip: '和逸飯店 (Cozzi) / 藍晒圖周邊旅宿。', priority: 'SR' },
+      { id: 'art_blue', name: '美術館 (Art Gallery)', subType: '畫框', icon: <Palette className="w-5 h-5 text-rose-500" />, tip: '藍晒圖文創園區 (有時判定為公園或商店)。', priority: 'Mid' },
+      { id: 'clothing_dept', name: '服飾店/餐廳', subType: '髮圈/廚師帽', icon: <ShoppingBag className="w-5 h-5 text-pink-600" />, tip: '新光三越百貨公司內部。', priority: 'Mid' }
     ]
   },
   weekend: {
     title: '假日郊區遠征',
     icon: <TentTree className="w-6 h-6" />,
-    desc: '動物園、海邊等需要特地前往的地點。',
+    desc: '動物園與真正的「海邊」。',
     color: 'bg-indigo-50',
     targets: [
       { id: 'zoo', name: '動物園 (Zoo)', subType: '蒲公英', icon: <TentTree className="w-5 h-5 text-green-700" />, tip: '頑皮世界野生動物園 (學甲)。', priority: 'SSR' },
-      { id: 'beach', name: '沙灘 (Beach)', subType: '貝殼', icon: <Waves className="w-5 h-5 text-cyan-500" />, tip: '觀夕平台、漁光島。', priority: 'SR' },
-      { id: 'movie', name: '電影院 (Movie)', subType: '爆米花', icon: <Drama className="w-5 h-5 text-purple-500" />, tip: '南紡威秀 / 國賓影城。', priority: 'Mid' }
+      { id: 'beach', name: '沙灘 (Beach)', subType: '貝殼', icon: <Waves className="w-5 h-5 text-cyan-500" />, tip: '觀夕平台、漁光島。(注意：水邊給魚餌，海邊才給貝殼)', priority: 'SR' }
     ]
   }
 };
@@ -167,6 +179,10 @@ export default function PikminCloudApp() {
   };
 
   const getCollectedCount = (targetId) => {
+    // Check if targetId ends with specific suffix to group shared collections (like waterside)
+    // Ideally we use unique IDs for the UI cards but check shared keys. 
+    // For simplicity in this version, we treat each location's target as unique to track "where" it came from,
+    // or we can use the simple count. Here we count based on the specific card's ID.
     return PIKMIN_COLORS.filter(c => collection[`${targetId}-${c.id}`]).length;
   };
 
