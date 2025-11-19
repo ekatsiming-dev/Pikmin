@@ -33,7 +33,7 @@ const cinematicGrainStyle = {
 
 // --- 設定區 ---
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxZ5PdhzrsLN5p6_n_BXGcc7hZ1yliK7xyuzVPP6XEG1IftkIhQfVRIbZNRjwJcsMV/exec'; 
-const LAST_UPDATED = '2025.11.19 Tri-State Ops';
+const LAST_UPDATED = '2025.11.19 Tri-State Ops + Ramen';
 
 // 全域顏色定義 (全開 8 色)
 const PIKMIN_COLORS = [
@@ -75,7 +75,7 @@ const LOCATIONS = {
   home: {
     title: '南應大商圈',
     icon: <MapPin className="w-5 h-5" />,
-    desc: '全糖生活圈，甜點密集。',
+    desc: '全糖生活圈，甜點密集。', // ★ 修正：補上結束引號
     targets: [
       { 
         id: 'sweetshop', name: '甜點店', category: '餐飲', icon: <Candy className="w-5 h-5 text-pink-500" />, 
@@ -115,6 +115,8 @@ const LOCATIONS = {
         tip: '榕園、大樹區。', priority: 'Mid' 
       },
       { id: 'pizza', name: '義式餐廳', category: '餐飲', icon: <Pizza className="w-5 h-5 text-orange-500" />, subType: '披薩', tip: '義大利麵店。', priority: 'Mid' },
+      // ★ 新增：拉麵店
+      { id: 'ramen', name: '拉麵店', category: '餐飲', icon: <Utensils className="w-5 h-5 text-gray-800" />, subType: '拉麵碗', tip: '日式拉麵專賣店。', priority: 'Mid' },
       { id: 'curry', name: '咖哩店', category: '餐飲', icon: <Utensils className="w-5 h-5 text-yellow-800" />, subType: '咖哩', tip: '咖哩專賣。', priority: 'Low' },
       { id: 'book', name: '圖書館', category: '文教', icon: <Store className="w-5 h-5 text-amber-800" />, subType: '書本', tip: '圖書館。', priority: 'Mid' }
     ]
@@ -156,7 +158,7 @@ const LOCATIONS = {
       { id: 'beach', name: '沙灘', category: '自然', icon: <Waves className="w-5 h-5 text-cyan-500" />, subType: '貝殼', tip: '漁光島。', priority: 'SR' },
       { id: 'mountain', name: '山', category: '自然', icon: <Mountain className="w-5 h-5 text-stone-600" />, subType: '山徽章', tip: '關子嶺。', priority: 'SSR' },
       { id: 'theme_park', name: '主題樂園', category: '娛樂', icon: <Ticket className="w-5 h-5 text-purple-500" />, subType: '門票', tip: '義大。', priority: 'SSR' },
-      { id: 'bridge', name: '橋樑', category: '交通', icon: <MapPin className="w-5 h-5 text-gray-500" />, subType: '橋樑', tip: '大型橋樑。', priority: 'Mid' }
+      { id: 'bridge', name: '橋樑', category: '交通', icon: <MapPin className="w-5 h-5 text-gray-500" />, subType: '橋樑', priority: 'Mid' }
     ]
   },
   special: {
@@ -207,7 +209,9 @@ const TAINAN_GUIDE_DATA = [
     items: [
       { type: '甜點店', places: '國華街、安平老街、冰果室', desc: '冰店、豆花、布丁都算。有馬卡龍/甜甜圈。' }, 
       { type: '漢堡', places: '丹丹漢堡、麥當勞', desc: '必試丹丹漢堡！南部特有樂趣。' },
-      { type: '咖啡廳', places: '中西區巷弄、成大周邊', desc: '密度極高，隨緣即可遇到。' }
+      { type: '咖啡廳', places: '中西區巷弄、成大周邊', desc: '密度極高，隨緣即可遇到。' },
+      // ★ 新增：拉麵店
+      { type: '拉麵店', places: '成大商圈、中西區', desc: '多為日式拉麵專賣店，飾品圖示與一般餐廳不同。' }
     ] 
   },
   { 
@@ -380,9 +384,6 @@ export default function App() {
             newVal = true; // 轉為已收集
         }
 
-        // 為了避免物件累積太多 undefined 鍵，如果 newVal 是 undefined，建議刪除該屬性
-        // 但 React state 更新用解構最簡單，這裡直接賦值 undefined 即可，JSON.stringify 會忽略 undefined
-        // 若要嚴謹刪除：
         if (newVal === undefined) {
             const nextState = { ...prev };
             delete nextState[key];
@@ -500,6 +501,7 @@ export default function App() {
         await navigator.share({ title: 'Pikmin Progress', text: report });
       } catch (err) { }
     } else {
+      document.execCommand('copy');
       navigator.clipboard.writeText(report);
       setStatusMsg('戰報已複製！');
       setTimeout(() => setStatusMsg(''), 2000);
