@@ -12,6 +12,7 @@ import {
 
 // --- 設定區 ---
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxZ5PdhzrsLN5p6_n_BXGcc7hZ1yliK7xyuzVPP6XEG1IftkIhQfVRIbZNRjwJcsMV/exec'; 
+const LAST_UPDATED = '2025.11.19 17:40'; //在此手動更新時間戳
 
 const PIKMIN_COLORS = [
   { id: 'red', name: '紅', color: 'bg-red-500', border: 'border-red-500', text: 'text-red-600' },
@@ -445,7 +446,6 @@ export default function PikminCloudApp() {
   const [isVip, setIsVip] = useState(false);
 
   // --- 核心函式：檢查 VIP 並同步資料 ---
-  // 將 loadFromCloud 的邏輯獨立出來，方便重複使用
   const checkVipAndSync = async (currentId) => {
     setIsSyncing(true);
     setStatusMsg('連線中...');
@@ -454,7 +454,6 @@ export default function PikminCloudApp() {
       const data = await response.json();
       
       if (data.collection !== undefined) {
-        // 如果雲端有資料，就用雲端的覆蓋；如果沒有，保留本地的
         if (Object.keys(data.collection).length > 0) {
           setCollection(data.collection);
         }
@@ -480,8 +479,6 @@ export default function PikminCloudApp() {
       const savedCollection = localStorage.getItem(`pikmin_collection_${savedUser}`);
       if (savedCollection) setCollection(JSON.parse(savedCollection));
       
-      // 自動檢查一次 (保持 session 時)
-      // 延遲一點點執行，避免跟 rendering 搶資源
       setTimeout(() => checkVipAndSync(savedUser), 1000);
     }
   }, []);
@@ -502,7 +499,6 @@ export default function PikminCloudApp() {
     } else {
       setCollection({});
     }
-    // 登入時立即觸發檢查
     checkVipAndSync(id);
   };
 
@@ -533,7 +529,7 @@ export default function PikminCloudApp() {
     return PIKMIN_COLORS.filter(c => collection[`${targetId}-${c.id}`]).length;
   };
 
-  // --- AI 智慧行程規劃 (後端代理版) ---
+  // --- AI 智慧行程規劃 (優化版) ---
   const generateAiItinerary = async () => {
     setIsLoadingAi(true);
     setAiAdvice('');
@@ -575,28 +571,10 @@ export default function PikminCloudApp() {
     `;
 
     try {
-      // ★ 改為呼叫 Apps Script 的 ask_ai 功能
+      // ★ 優化：直接呼叫後端代理，使用 text/plain 格式避開 CORS 預檢，且不發送兩次請求
       const response = await fetch(scriptUrl, {
         method: 'POST',
-        mode: 'no-cors', // Google Script POST 需要 no-cors
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ask_ai',
-          userId: userId, // 必須傳送 ID 供後端驗證 VIP
-          prompt: prompt
-        })
-      });
-
-      // 注意：no-cors 模式下無法直接讀取 response。
-      // 但 Apps Script 作為後端時，通常我們會用 GET 請求或允許 CORS 的 POST。
-      // 為了取得回應資料，這裡我們需要改用標準的 fetch 處理方式
-      // 如果上面的 no-cors 導致拿不到資料，我們改用下面這個特殊的 POST 技巧
-      
-      // 重發一次請求 (這次不加 no-cors，因為我們需要回傳值)
-      // 如果遇到 CORS 錯誤，通常是因為 Apps Script 部署權限問題 (必須是 Anyone)
-      const dataResponse = await fetch(scriptUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 這是規避 CORS 的小技巧
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'ask_ai',
           userId: userId,
@@ -604,7 +582,7 @@ export default function PikminCloudApp() {
         })
       });
 
-      const data = await dataResponse.json();
+      const data = await response.json();
       
       if (data.status === 'success') {
         setAiAdvice(data.data);
@@ -893,7 +871,6 @@ export default function PikminCloudApp() {
                   上傳備份
                 </button>
                 <button 
-                  // 這裡保持呼叫 checkVipAndSync 以便手動同步時也能更新 VIP
                   onClick={() => checkVipAndSync(userId)}
                   disabled={isSyncing}
                   className="flex-1 bg-white/20 hover:bg-white/30 text-white text-xs py-2 rounded-lg flex items-center justify-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -949,7 +926,7 @@ export default function PikminCloudApp() {
       </main>
 
       <footer className="p-4 text-center text-xs text-gray-400 bg-gray-50 border-t border-gray-200">
-        台南皮克敏攻略 • ID: {userId} • Powered by Apps Script & Gemini AI-V11411191644
+        台南皮克敏攻略 • ID: {userId} • Powered by Apps Script & Gemini AI • Ver {LAST_UPDATED}
       </footer>
     </div>
   );
