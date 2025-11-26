@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>皮克敏 4週年活動助手 - Celebration Mode</title>
+    <meta name="description" content="Pikmin Bloom 4th Anniversary Planner">
+    
+    <!-- React & Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Outfit"', 'sans-serif'],
+                        display: ['"Outfit"', '"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#f59e0b', // 慶典金黃 (Amber-500) - 呼應 4th Logo
+                        'primary-dark': '#d97706',
+                        secondary: '#4338ca', // 派對紫藍 (Indigo-700) - 呼應禮物盒與背景
+                        highlight: '#fef3c7', // 淺黃高亮
+                        base: '#f8fafc', // 雲朵白 (Slate-50)
+                        text: '#1e293b', // 深藍灰 (Slate-800)
+                        success: '#10b981', // 翡翠綠 (Emerald-500)
+                    },
+                    backgroundImage: {
+                        // 改為藍紫色系的漸層遮罩，更夢幻
+                        'cinematic-mask': 'linear-gradient(to top, rgba(30, 58, 138, 0.95) 0%, rgba(67, 56, 202, 0.4) 60%, rgba(255,255,255,0) 100%)',
+                        'party-gradient': 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bloom': 'bloom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bloom: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0.5' },
+                            '50%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                        'card': '0 10px 30px -5px rgba(67, 56, 202, 0.08)', // 帶紫色的陰影
+                        'glow': '0 0 15px rgba(245, 158, 11, 0.3)', // 金色光暈
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Accordion Animation */
+        .accordion-content {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-10px);
+        }
+        .accordion-content.open {
+            max-height: 2000px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Glassmorphism Utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .glass-panel-dark {
+            background: rgba(30, 41, 59, 0.6); /* Slate-800 with opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Link Chain Line for Calculator - Updated to Festive Gold Gradient */
+        .link-chain {
+            position: absolute;
+            left: 24px;
+            top: 40px;
+            bottom: 40px;
+            width: 2px;
+            background: linear-gradient(to bottom, #e2e8f0 0%, #f59e0b 50%, #e2e8f0 100%);
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Fix ReferenceError by explicitly getting React/ReactDOM from window
+        const React = window.React;
+        const ReactDOM = window.ReactDOM;
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Icons ---
+        const Icon = ({ d, className, fill="none", strokeWidth="2" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {d}
+            </svg>
+        );
+
+        const Icons = {
+            Leaf: (props) => <Icon d={<><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 .5 3.5-1.1 9.2A7 7 0 0 1 11 20Z"/><path d="m8 2 16 16"/></>} {...props} />,
+            Footprints: (props) => <Icon d={<><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 1.25-.25 2.5-1.46 3.06"/><path d="M20 8v2.38c0 2.12 1.03 3.12 1 5.62-.03 2.72-1.49 6-4.5 6C14.63 22 13 20.2 13 16c0-1.25.25-2.5 1.46-3.06"/><path d="M5.5 14h.01"/><path d="M18.5 10h.01"/></>} {...props} />,
+            Bus: (props) => <Icon d={<><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></>} {...props} />,
+            Bike: (props) => <Icon d={<><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></>} {...props} />,
+            Settings: (props) => <Icon d={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} {...props} />,
+            CheckCircle2: (props) => <Icon d={<><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>} {...props} />,
+            Calculator: (props) => <Icon d={<><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></>} {...props} />,
+            ListTodo: (props) => <Icon d={<><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></>} {...props} />,
+            Timer: (props) => <Icon d={<><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></>} {...props} />,
+            Flower: (props) => <Icon d={<><circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5"/><path d="M12 7.5A4.5 4.5 0 1 0 7.5 12 4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 1 0 12 7.5"/><path d="M3.5 12h.01"/><path d="M20.5 12h.01"/><path d="M12 20.5h.01"/><path d="M12 3.5h.01"/></>} {...props} />,
+            ChevronDown: (props) => <Icon d={<path d="m6 9 6 6 6-6"/>} {...props} />,
+            Trash2: (props) => <Icon d={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>} {...props} />,
+            Sprout: (props) => <Icon d={<path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 2.5-5.7 2.4-6.6-2.5 1.3-1.2 2.9-1.5 4.3-1.2"/>} {...props} />,
+            Calendar: (props) => <Icon d={<><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></>} {...props} />,
+            Refresh: (props) => <Icon d={<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>} {...props} />,
+            Droplets: (props) => <Icon d={<><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.8-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.35"/></>} {...props} />,
+        };
+
+        const TRANSPORT_MODES = {
+            walk: { label: "步行", speed: 4.5, density: 12 },
+            bike: { label: "腳踏車", speed: 12, density: 18 },
+            bus: { label: "公車", speed: 20, density: 15 }
+        };
+
+        const getConsumptionRate = (squadSize) => {
+            if (squadSize < 10) return 2;
+            if (squadSize < 20) return 3;
+            if (squadSize < 30) return 4;
+            if (squadSize < 40) return 5;
+            return 6;
+        };
+
+        const STAGE_DATA = [
+            {
+                id: 1,
+                title: "Stage 1：暖身起步",
+                tasks: [
+                    { id: "1-1", type: "step", text: "走 1000 步" },
+                    { id: "1-2", type: "grow", text: "培育 2 隻皮克敏" },
+                    { id: "1-3", type: "expedition", text: "完成 2 個探險" },
+                    { id: "1-4a", type: "plant", flowerType: "一般花朵", amount: 1000, text: "種 1000 朵花" },
+                    { id: "1-4b", type: "mushroom", text: "摧毀 2 棵蘑菇" },
+                ]
+            },
+            {
+                id: 2,
+                title: "Stage 2：探索升溫",
+                tasks: [
+                    { id: "2-1", type: "step", text: "走 2000 步" },
+                    { id: "2-2a", type: "plant", flowerType: "一般花朵", amount: 1000, text: "種 1000 朵花" },
+                    { id: "2-2b", type: "mushroom", text: "摧毀 2 棵蘑菇" },
+                    { id: "2-3a", type: "grow", text: "培育 3 隻皮克敏" },
+                    { id: "2-3b", type: "mushroom", text: "摧毀 3 棵蘑菇" },
+                    { id: "2-4a", type: "plant", flowerType: "鼠尾草", amount: 500, text: "種 500 朵鼠尾草" },
+                    { id: "2-4b", type: "mushroom", text: "摧毀 4 棵蘑菇" },
+                ]
+            },
+            {
+                id: 3,
+                title: "Stage 3：色彩綻放",
+                tasks: [
+                    { id: "3-1a", type: "step", text: "走 2000 步" },
+                    { id: "3-1b", type: "expedition", text: "完成 2 個探險" },
+                    { id: "3-2a", type: "plant", flowerType: "白色鐵線蓮", amount: 1500, text: "種 1500 朵白色鐵線蓮" },
+                    { id: "3-2b", type: "mushroom", text: "摧毀 3 棵蘑菇" },
+                    { id: "3-3a", type: "plant", flowerType: "紅色鐵線蓮", amount: 1500, text: "種 1500 朵紅色鐵線蓮" },
+                    { id: "3-3b", type: "mushroom", text: "摧毀 4 棵蘑菇" },
+                    { id: "3-4a", type: "plant", flowerType: "黃色鐵線蓮", amount: 1500, text: "種 1500 朵黃色鐵線蓮" },
+                    { id: "3-4b", type: "plant", flowerType: "紅色鼠尾草", amount: 2000, text: "種 2000 朵紅色鼠尾草" },
+                    { id: "3-4c", type: "mushroom", text: "摧毀 5 棵蘑菇" },
+                ]
+            },
+            {
+                id: 4,
+                title: "Stage 4：終極挑戰",
+                tasks: [
+                    { id: "4-1a", type: "expedition", text: "完成 3 個探險" },
+                    { id: "4-1b", type: "mushroom", text: "摧毀 3 棵蘑菇" },
+                    { id: "4-2a", type: "plant", flowerType: "白色鼠尾草", amount: 2000, text: "種 2000 朵白色鼠尾草" },
+                    { id: "4-2b", type: "mushroom", text: "摧毀 4 棵蘑菇" },
+                    { id: "4-3a", type: "plant", flowerType: "黃色鼠尾草", amount: 2000, text: "種 2000 朵黃色鼠尾草" },
+                    { id: "4-3b", type: "plant", flowerType: "藍色鐵線蓮", amount: 1000, text: "種 1000 朵藍色鐵線蓮" },
+                    { id: "4-3c", type: "mushroom", text: "摧毀 4 棵蘑菇" },
+                    { id: "4-4a", type: "plant", flowerType: "藍色鼠尾草", amount: 2000, text: "種 2000 朵藍色鼠尾草" },
+                    { id: "4-4b", type: "plant", flowerType: "鐵線蓮", amount: 2500, text: "種 2500 朵鐵線蓮 (任意)" },
+                    { id: "4-4c", type: "mushroom", text: "摧毀 5 棵蘑菇" },
+                ]
+            }
+        ];
+
+        const CountdownTimer = () => {
+            const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+
+            useEffect(() => {
+                const calculateTimeLeft = () => {
+                    const now = new Date();
+                    const currentYear = now.getFullYear();
+                    const currentMonth = now.getMonth();
+                    const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+                    const difference = endDate - now;
+
+                    if (difference > 0) {
+                        setTimeLeft({
+                            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                            hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                            minutes: Math.floor((difference / 1000 / 60) % 60),
+                        });
+                    }
+                };
+
+                calculateTimeLeft();
+                const timer = setInterval(calculateTimeLeft, 60000); 
+                return () => clearInterval(timer);
+            }, []);
+
+            return (
+                <div className="glass-panel-dark px-3 py-1.5 rounded-full flex items-center gap-2 border-primary/20 bg-black/40">
+                    <Icons.Calendar className="w-3.5 h-3.5 text-primary" />
+                    <div className="flex items-baseline gap-1 text-white">
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 mr-1 text-primary-200">ENDS IN</span>
+                        <span className="text-xs font-bold font-mono tracking-wide text-white drop-shadow-sm">
+                            {timeLeft.days}天 {timeLeft.hours}時 {timeLeft.minutes}分
+                        </span>
+                    </div>
+                </div>
+            );
+        };
+
+        const HeroSection = ({ completedCount, totalCount, resetTasks }) => {
+            return (
+                <div className="relative min-h-[420px] w-full overflow-hidden rounded-b-[2.5rem] shadow-2xl z-10 bg-secondary group">
+                    <img 
+                        src="https://lh3.googleusercontent.com/RWn7F4xsRiOAKoCjgOSmXpoQ8w4aFIpHNKV4q78kkQyYzOO3rx03EudVIftEJXQFffkeq52nRYnexklX9SLJQ26-cP2VFTnop5_zdn8=s000"
+                        alt="Pikmin 4th Anniversary"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-[20s] ease-linear group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-cinematic-mask"></div>
+                    
+                    <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-20">
+                         <CountdownTimer />
+                         <button 
+                            onClick={resetTasks}
+                            className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white/90 hover:text-white transition-all border border-white/20 shadow-lg"
+                        >
+                            <Icons.Trash2 className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 w-full p-8 text-white pb-12">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                            <div className="animate-slide-up">
+                                <div className="flex items-center gap-2 mb-3 opacity-90">
+                                    <div className="bg-primary p-1 rounded-full animate-pulse-slow">
+                                        <Icons.Leaf className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="text-sm font-bold tracking-[0.2em] uppercase text-primary-100 drop-shadow-md">4th Anniversary</span>
+                                </div>
+                                <h1 className="text-4xl md:text-5xl font-extrabold font-display leading-[1.1] drop-shadow-xl tracking-tight text-white">
+                                    歡慶。<br/>
+                                    <span className="bg-clip-text text-transparent bg-party-gradient">繽紛</span>你的旅程
+                                </h1>
+                            </div>
+
+                            <div className="glass-panel-dark p-5 rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl min-w-[140px] animate-slide-up" style={{animationDelay: '0.1s'}}>
+                                <div className="flex justify-between items-end mb-1">
+                                    <span className="text-xs text-blue-200 font-medium uppercase">Progress</span>
+                                    <span className="text-xs text-primary font-bold">{Math.round((completedCount/totalCount)*100)}%</span>
+                                </div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-4xl font-bold text-white font-display tracking-tight drop-shadow-sm">
+                                        {completedCount}
+                                    </span>
+                                    <span className="text-lg text-white/50 font-medium">/{totalCount}</span>
+                                </div>
+                                <div className="h-2 w-full bg-white/10 rounded-full mt-3 overflow-hidden border border-white/5">
+                                    <div 
+                                        className="h-full bg-party-gradient transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                                        style={{ width: `${(completedCount/totalCount)*100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const StageCard = ({ stage, completedTasks, toggleTask, isActive, isCompleted, isLocked, onToggleExpand, expanded, stageNeeds, flowerPerPetal, consumptionRate }) => {
+            const stageTaskCount = stage.tasks.length;
+            const stageCompletedCount = stage.tasks.filter(t => completedTasks[t.id]).length;
+            const progress = (stageCompletedCount / stageTaskCount) * 100;
+
+            return (
+                <div className={`relative overflow-hidden transition-all duration-500 ease-out ${
+                    isActive 
+                    ? 'bg-white shadow-card scale-[1.02] z-10 rounded-2xl border-l-4 border-primary' 
+                    : 'bg-white/80 border border-transparent scale-100 opacity-90 rounded-xl hover:bg-white'
+                } ${isCompleted ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+                    
+                    <div 
+                        onClick={onToggleExpand}
+                        className="p-5 cursor-pointer select-none relative overflow-hidden"
+                    >
+                        {isActive && !expanded && (
+                            <div 
+                                className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full"
+                            >
+                                <div className="h-full bg-primary transition-all duration-700" style={{ width: `${progress}%` }}></div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-500 ${
+                                    isCompleted ? 'bg-success text-white' : 
+                                    isActive ? 'bg-primary text-white rotate-3 shadow-glow' : 
+                                    'bg-slate-100 text-slate-400'
+                                }`}>
+                                    {isCompleted ? <Icons.CheckCircle2 className="w-6 h-6 animate-bloom" /> : stage.id}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className={`font-bold text-lg tracking-tight ${isActive ? 'text-slate-800' : 'text-slate-600'}`}>
+                                        {stage.title}
+                                    </span>
+                                    <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                        {isCompleted 
+                                            ? <span className="text-success font-bold">任務完成</span> 
+                                            : `進度: ${stageCompletedCount}/${stageTaskCount}`
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                            <Icons.ChevronDown className={`w-5 h-5 text-slate-300 transition-transform duration-300 ${expanded ? 'rotate-180 text-primary' : ''}`} />
+                        </div>
+                    </div>
+
+                    <div className={`accordion-content bg-slate-50/50 ${expanded ? 'open' : ''}`}>
+                        <div className="p-3 space-y-2">
+                            {stage.tasks.map((task) => {
+                                const isTaskDone = !!completedTasks[task.id];
+                                
+                                let reqPetals = 0;
+                                let estTime = 0;
+                                if (task.type === 'plant') {
+                                    reqPetals = Math.ceil(task.amount / flowerPerPetal);
+                                    estTime = Math.ceil(reqPetals / consumptionRate);
+                                }
+
+                                return (
+                                    <div 
+                                        key={task.id}
+                                        onClick={() => toggleTask(task.id)}
+                                        className={`group relative p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-4 active:scale-[0.98] duration-200 ${
+                                            isTaskDone 
+                                            ? 'bg-slate-100/50 border-transparent' 
+                                            : 'bg-white border-slate-100 hover:border-primary/30 shadow-sm hover:shadow-md'
+                                        }`}
+                                    >
+                                        <div className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            isTaskDone 
+                                            ? 'border-success bg-success scale-110' 
+                                            : 'border-slate-200 group-hover:border-primary/50 bg-white'
+                                        }`}>
+                                            <Icons.CheckCircle2 className={`w-4 h-4 text-white transition-all duration-300 ${isTaskDone ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <p className={`font-medium text-[15px] transition-all ${isTaskDone ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                {task.text}
+                                            </p>
+                                            
+                                            {task.type === 'plant' && !isTaskDone && (
+                                                <div className="flex flex-wrap gap-2 mt-2 animate-fade-in">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
+                                                        <Icons.Flower className="w-3 h-3 mr-1" />
+                                                        需 {reqPetals} 花瓣
+                                                    </span>
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
+                                                        <Icons.Timer className="w-3 h-3 mr-1" />
+                                                        約 {estTime} 分鐘
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {isActive && stageNeeds && Object.keys(stageNeeds).length > 0 && (
+                                <div className="mt-4 mb-2 animate-fade-in">
+                                    <div className="bg-white rounded-xl p-5 border border-primary/10 shadow-[0_4px_20px_-5px_rgba(245,158,11,0.15)]">
+                                        <h3 className="text-xs font-bold text-primary mb-4 flex items-center uppercase tracking-wider opacity-80 border-b border-slate-100 pb-2">
+                                            <Icons.Sprout className="w-4 h-4 mr-2" />
+                                            總計剩餘需求 (含後續關卡)
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {Object.entries(stageNeeds).map(([flower, amount]) => (
+                                                <div key={flower} className="flex justify-between items-center group">
+                                                    <div className="flex items-center">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2.5 group-hover:scale-150 transition-transform shadow-glow"></div>
+                                                        <span className="text-sm text-slate-700 font-medium">{flower}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="block font-bold text-primary text-sm">
+                                                            {amount} 朵
+                                                        </span>
+                                                        <span className="block text-[10px] text-slate-400">
+                                                            約 {Math.ceil(amount / flowerPerPetal)} 花瓣
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="h-2"></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SettingsBar = ({ squadSize, setSquadSize, transport, setTransport }) => (
+            <div className="mx-5 -mt-10 relative z-30 glass-panel rounded-2xl shadow-glass p-5 flex flex-col gap-4 animate-slide-up">
+                <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <Icons.Settings className="w-3 h-3" /> 隊伍規模
+                    </label>
+                    <div className="flex items-center bg-slate-100/50 rounded-lg p-1 border border-slate-200/50">
+                         <button 
+                            onClick={() => setSquadSize(Math.max(10, squadSize - 5))}
+                            className="w-8 h-8 rounded-md hover:bg-white text-slate-500 hover:text-primary hover:shadow-sm flex items-center justify-center transition-all"
+                        ><Icons.ChevronDown className="w-4 h-4 rotate-90" /></button>
+                        <span className="font-bold text-primary w-14 text-center text-lg font-display">{squadSize}</span>
+                        <button 
+                            onClick={() => setSquadSize(Math.min(40, squadSize + 5))}
+                            className="w-8 h-8 rounded-md hover:bg-white text-slate-500 hover:text-primary hover:shadow-sm flex items-center justify-center transition-all"
+                        ><Icons.ChevronDown className="w-4 h-4 -rotate-90" /></button>
+                    </div>
+                </div>
+                <div className="h-px bg-slate-200/50 w-full"></div>
+                <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">移動方式</label>
+                    <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
+                        {Object.entries(TRANSPORT_MODES).map(([key, mode]) => {
+                            const ModeIcon = key === 'walk' ? Icons.Footprints : key === 'bike' ? Icons.Bike : Icons.Bus;
+                            const isSelected = transport === key;
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setTransport(key)}
+                                    className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 ${isSelected ? 'bg-white text-primary shadow-sm font-bold ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <ModeIcon className="w-4 h-4" />
+                                    <span className="text-xs">{mode.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('tracker');
+            const [squadSize, setSquadSize] = useState(() => Number(localStorage.getItem('pikmin_squad')) || 40);
+            const [transport, setTransport] = useState(() => localStorage.getItem('pikmin_transport') || 'walk');
+            const [completedTasks, setCompletedTasks] = useState(() => JSON.parse(localStorage.getItem('pikmin_tasks')) || {});
+            const [expandedStages, setExpandedStages] = useState({});
+            
+            useEffect(() => { localStorage.setItem('pikmin_squad', squadSize); }, [squadSize]);
+            useEffect(() => { localStorage.setItem('pikmin_transport', transport); }, [transport]);
+            useEffect(() => { localStorage.setItem('pikmin_tasks', JSON.stringify(completedTasks)); }, [completedTasks]);
+
+            // --- Omni Calculator State ---
+            const [calcValues, setCalcValues] = useState({
+                flowers: 1000,
+                petals: 0,
+                minutes: 0
+            });
+
+            const consumptionRate = getConsumptionRate(squadSize);
+            const flowerPerPetal = TRANSPORT_MODES[transport].density;
+
+            useEffect(() => {
+                const p = Math.ceil(calcValues.flowers / flowerPerPetal);
+                const t = Math.ceil(p / consumptionRate);
+                setCalcValues(prev => ({
+                    ...prev,
+                    petals: p,
+                    minutes: t
+                }));
+            }, [squadSize, transport]);
+
+            const handleFlowersChange = (e) => {
+                const val = Math.max(0, parseInt(e.target.value) || 0);
+                const p = Math.ceil(val / flowerPerPetal);
+                const t = Math.ceil(p / consumptionRate);
+                setCalcValues({ flowers: val, petals: p, minutes: t });
+            };
+
+            const handlePetalsChange = (e) => {
+                const val = Math.max(0, parseInt(e.target.value) || 0);
+                const f = val * flowerPerPetal;
+                const t = Math.ceil(val / consumptionRate);
+                setCalcValues({ flowers: f, petals: val, minutes: t });
+            };
+
+            const handleMinutesChange = (e) => {
+                const val = Math.max(0, parseInt(e.target.value) || 0);
+                const p = Math.ceil(val * consumptionRate);
+                const f = p * flowerPerPetal;
+                setCalcValues({ flowers: f, petals: p, minutes: val });
+            };
+
+            const toggleTask = (taskId) => {
+                setCompletedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }));
+            };
+
+            const resetTasks = () => {
+                if(confirm("確定要重置所有任務進度嗎？")) {
+                    setCompletedTasks({});
+                    setExpandedStages({});
+                }
+            };
+
+            const analysis = useMemo(() => {
+                let totalTasks = 0, doneTasks = 0, activeStageId = 1, foundActive = false;
+                let currentStageNeeds = {}, totalNeeds = {};
+
+                STAGE_DATA.forEach(stage => {
+                    let stageIncomplete = false;
+                    let thisStageNeeds = {};
+                    stage.tasks.forEach(task => {
+                        totalTasks++;
+                        if (completedTasks[task.id]) doneTasks++;
+                        else {
+                            stageIncomplete = true;
+                            if (task.type === 'plant') {
+                                totalNeeds[task.flowerType] = (totalNeeds[task.flowerType] || 0) + task.amount;
+                                thisStageNeeds[task.flowerType] = (thisStageNeeds[task.flowerType] || 0) + task.amount;
+                            }
+                        }
+                    });
+                    if (stageIncomplete && !foundActive) {
+                        activeStageId = stage.id;
+                        foundActive = true;
+                        currentStageNeeds = thisStageNeeds;
+                    }
+                });
+                if (totalTasks > 0 && totalTasks === doneTasks) activeStageId = STAGE_DATA.length + 1;
+                return { totalTasks, doneTasks, activeStageId, currentStageNeeds, totalNeeds };
+            }, [completedTasks]);
+
+            useEffect(() => {
+                if(analysis.activeStageId <= STAGE_DATA.length) {
+                    setExpandedStages({ [analysis.activeStageId]: true });
+                }
+            }, [analysis.activeStageId]);
+
+            const toggleStage = (id) => {
+                setExpandedStages(prev => ({ ...prev, [id]: !prev[id] }));
+            };
+
+            return (
+                <div className="min-h-screen pb-28 font-sans selection:bg-primary/20 selection:text-primary">
+                    
+                    <HeroSection 
+                        completedCount={analysis.doneTasks} 
+                        totalCount={analysis.totalTasks} 
+                        resetTasks={resetTasks}
+                    />
+
+                    <SettingsBar 
+                        squadSize={squadSize} 
+                        setSquadSize={setSquadSize} 
+                        transport={transport} 
+                        setTransport={setTransport} 
+                    />
+
+                    <main className="px-5 mt-8 space-y-8 max-w-3xl mx-auto">
+                        {activeTab === 'tracker' && (
+                            <div className="space-y-4 animate-fade-in">
+                                <div className="flex items-center justify-between px-2 mb-2">
+                                    <h2 className="text-lg font-bold text-slate-700 font-display">Mission Log</h2>
+                                    <span className="text-xs font-bold px-2 py-1 bg-yellow-100 text-yellow-700 rounded border border-yellow-200 shadow-sm">2025/11 Event</span>
+                                </div>
+                                {STAGE_DATA.map(stage => {
+                                    const isCompleted = stage.tasks.every(t => completedTasks[t.id]);
+                                    const isActive = analysis.activeStageId === stage.id;
+                                    const isLocked = stage.id > analysis.activeStageId;
+                                    return (
+                                        <StageCard 
+                                            key={stage.id}
+                                            stage={stage}
+                                            completedTasks={completedTasks}
+                                            toggleTask={toggleTask}
+                                            isActive={isActive}
+                                            isCompleted={isCompleted}
+                                            isLocked={isLocked}
+                                            expanded={expandedStages[stage.id]}
+                                            onToggleExpand={() => toggleStage(stage.id)}
+                                            stageNeeds={isActive ? analysis.totalNeeds : null}
+                                            flowerPerPetal={flowerPerPetal}
+                                            consumptionRate={consumptionRate}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {activeTab === 'calc' && (
+                            <div className="animate-fade-in space-y-5">
+                                <div className="bg-white p-6 rounded-2xl shadow-card border border-slate-100 relative overflow-hidden">
+                                    <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4 relative z-10">
+                                        <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                                            <Icons.Calculator className="w-6 h-6"/>
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-bold text-slate-800 font-display">三方連動計算機</h2>
+                                            <p className="text-xs text-slate-400">輸入任一數值，自動推算其他兩項</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Visual Link Chain - Updated */}
+                                    <div className="link-chain rounded-full opacity-50"></div>
+
+                                    <div className="space-y-6 relative z-10 pl-6">
+                                        {/* Input 1: Flowers */}
+                                        <div className="relative">
+                                            <div className="absolute -left-[33px] top-1/2 -translate-y-1/2 bg-white border-2 border-primary/20 w-4 h-4 rounded-full z-20 shadow-sm"></div>
+                                            <label className="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider pl-1">目標花朵 (Flowers)</label>
+                                            <div className="bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                                                <div className="p-3 bg-orange-50 rounded-lg text-orange-500 mr-2">
+                                                    <Icons.Flower className="w-5 h-5" />
+                                                </div>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={calcValues.flowers}
+                                                    onChange={handleFlowersChange}
+                                                    className="w-full bg-transparent text-xl font-bold text-slate-800 focus:outline-none"
+                                                    placeholder="0"
+                                                />
+                                                <span className="text-xs font-bold text-slate-300 pr-4">朵</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Input 2: Petals */}
+                                        <div className="relative">
+                                             <div className="absolute -left-[33px] top-1/2 -translate-y-1/2 bg-white border-2 border-primary/20 w-4 h-4 rounded-full z-20 shadow-sm"></div>
+                                            <label className="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider pl-1">消耗花瓣 (Petals)</label>
+                                            <div className="bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                                                <div className="p-3 bg-red-50 rounded-lg text-primary mr-2">
+                                                    <Icons.Droplets className="w-5 h-5" />
+                                                </div>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={calcValues.petals}
+                                                    onChange={handlePetalsChange}
+                                                    className="w-full bg-transparent text-xl font-bold text-slate-800 focus:outline-none"
+                                                    placeholder="0"
+                                                />
+                                                <span className="text-xs font-bold text-slate-300 pr-4">片</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Input 3: Time */}
+                                        <div className="relative">
+                                             <div className="absolute -left-[33px] top-1/2 -translate-y-1/2 bg-white border-2 border-primary/20 w-4 h-4 rounded-full z-20 shadow-sm"></div>
+                                            <label className="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider pl-1">所需時間 (Time)</label>
+                                            <div className="bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                                                <div className="p-3 bg-indigo-50 rounded-lg text-indigo-500 mr-2">
+                                                    <Icons.Timer className="w-5 h-5" />
+                                                </div>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={calcValues.minutes}
+                                                    onChange={handleMinutesChange}
+                                                    className="w-full bg-transparent text-xl font-bold text-slate-800 focus:outline-none"
+                                                    placeholder="0"
+                                                />
+                                                <span className="text-xs font-bold text-slate-300 pr-4">分</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                                        <div className="text-xs text-slate-400">
+                                            當前配置: {squadSize}隻皮克敏 · {TRANSPORT_MODES[transport].label}
+                                        </div>
+                                        <button 
+                                            onClick={() => setCalcValues({flowers: 0, petals: 0, minutes: 0})}
+                                            className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1 bg-primary/5 px-2 py-1 rounded hover:bg-primary/10 transition-colors"
+                                        >
+                                            <Icons.Refresh className="w-3 h-3" /> 重置
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-full p-1.5 z-40">
+                        <div className="flex justify-between items-center h-14 relative">
+                            <div className={`absolute top-1.5 bottom-1.5 w-[48%] bg-primary rounded-full transition-all duration-300 ease-out shadow-lg ${
+                                activeTab === 'calc' ? 'left-[50%]' : 'left-[2%]'
+                            }`}></div>
+
+                            <button 
+                                onClick={() => setActiveTab('tracker')}
+                                className={`flex items-center justify-center w-1/2 h-full space-x-2 rounded-full relative z-10 transition-colors ${
+                                    activeTab === 'tracker' ? 'text-white' : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                                <Icons.ListTodo className="w-5 h-5" />
+                                <span className="text-xs font-bold tracking-wide">任務</span>
+                            </button>
+                            
+                            <button 
+                                onClick={() => setActiveTab('calc')}
+                                className={`flex items-center justify-center w-1/2 h-full space-x-2 rounded-full relative z-10 transition-colors ${
+                                    activeTab === 'calc' ? 'text-white' : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                                <Icons.Calculator className="w-5 h-5" />
+                                <span className="text-xs font-bold tracking-wide">工具</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        if (container) {
+            const root = ReactDOM.createRoot(container);
+            root.render(<App />);
+        }
+    </script>
+</body>
+</html>
